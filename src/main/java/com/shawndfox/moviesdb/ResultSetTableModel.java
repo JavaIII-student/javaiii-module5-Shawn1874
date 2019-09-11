@@ -10,12 +10,14 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import javax.swing.table.AbstractTableModel;
 
-// ResultSet rows and columns are counted from 1 and JTable 
-// rows and columns are counted from 0. When processing 
-// ResultSet rows or columns for use in a JTable, it is 
-// necessary to add 1 to the row or column number to manipulate
-// the appropriate ResultSet column (i.e., JTable column 0 is 
-// ResultSet column 1 and JTable row 0 is ResultSet row 1).
+/**
+ * Implementation of AbstractTableModel which serves as a data model for the JTable
+ * control used within the application.  Adapted from example code produced originally
+ * by Deitel & Associates, Inc. and * Pearson Education.
+ * 
+ * @author Deitel & Associates, Inc. and * Pearson Education
+ * @author Shawn D. Fox
+ */
 public class ResultSetTableModel extends AbstractTableModel
 {
 
@@ -28,9 +30,13 @@ public class ResultSetTableModel extends AbstractTableModel
    // keep track of database connection status 
    private boolean connectedToDatabase = false;
 
-   // constructor initializes resultSet and obtains its metadata object;
-   // determines number of rows
-   public ResultSetTableModel(String url, String query) throws SQLException
+   /**
+    * Constructor initializes resultSet and obtains its metadata object
+    * 
+    * @param url connection string for the database
+    * @throws SQLException 
+    */
+   public ResultSetTableModel(String url) throws SQLException
    {
       // connect to database
       connection = DriverManager.getConnection(url);
@@ -41,12 +47,15 @@ public class ResultSetTableModel extends AbstractTableModel
 
       // update database connection status
       connectedToDatabase = true;
-
-      // set query and execute it
-      setQuery(query);
    }
 
-   // get class that represents column type
+   /**
+    * Get class that represents column type
+    * @param column 0 based index of the column
+    * @return
+    * @throws IllegalStateException 
+    */
+   @Override
    public Class getColumnClass(int column) throws IllegalStateException
    {
       // ensure database connection is available                      
@@ -68,7 +77,13 @@ public class ResultSetTableModel extends AbstractTableModel
       return Object.class; // if problems occur above, assume type Object
    }
 
-   // get number of columns in ResultSet
+   /**
+    * Gets the number of columns within the table that are currently displayed
+    * 
+    * @return number of columns in ResultSet
+    * @throws IllegalStateException 
+    */
+   @Override
    public int getColumnCount() throws IllegalStateException
    {
       // ensure database connection is available
@@ -87,26 +102,39 @@ public class ResultSetTableModel extends AbstractTableModel
       return 0; // if problems occur above, return 0 for number of columns
    }
 
-   // get name of a particular column in ResultSet
+   /**
+    * Gets the name of the column from the ResultSet of the last query executed
+    * successfully.
+    * 
+    * @param column 0 based index of the column
+    * @return the name to display as the column header
+    */
+   @Override
    public String getColumnName(int column) throws IllegalStateException
    {
+      String name = "";
+      
       // ensure database connection is available
-      if (!connectedToDatabase) {
-         throw new IllegalStateException("Not Connected to Database");
+      if (connectedToDatabase) {
+         // determine column name
+         try {
+            name = metaData.getColumnName(column + 1);
+         }
+         catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+         }
       }
 
-      // determine column name
-      try {
-         return metaData.getColumnName(column + 1);
-      }
-      catch (SQLException sqlException) {
-         sqlException.printStackTrace();
-      }
-
-      return ""; // if problems, return empty string for column name
+      return name; // if problems, return empty string for column name
    }
 
-   // return number of rows in ResultSet
+   /**
+    * Gets the number of rows within the table that are currently displayed
+    * 
+    * @return number of rows in ResultSet
+    * @throws IllegalStateException 
+    */
+   @Override
    public int getRowCount() throws IllegalStateException
    {
       // ensure database connection is available
@@ -117,7 +145,14 @@ public class ResultSetTableModel extends AbstractTableModel
       return numberOfRows;
    }
 
-   // obtain value in particular row and column
+   /**
+    * obtain value in particular row and column
+    * @param row 0 based index of the row
+    * @param column 0 based index of the column
+    * @return the object at the intersection of the specified location
+    * @throws IllegalStateException if not connected to the database
+    */
+   @Override
    public Object getValueAt(int row, int column)
            throws IllegalStateException
    {
@@ -139,11 +174,16 @@ public class ResultSetTableModel extends AbstractTableModel
       return ""; // if problems, return empty string object
    }
 
-   // set new database query string
-   public void setQuery(String query)
+   /**
+    * Executes the specified query, and refresh the table if connected to the database.
+    * 
+    * @param query The query to execute
+    * @throws SQLException if the query execution fails
+    * @throws IllegalStateException if not connected to a database
+    */
+   public final void setQuery(String query)
            throws SQLException, IllegalStateException
    {
-
       // ensure database connection is available
       if (!connectedToDatabase) {
          throw new IllegalStateException("Not Connected to Database");
@@ -162,13 +202,19 @@ public class ResultSetTableModel extends AbstractTableModel
       fireTableStructureChanged(); // notify JTable that model has changed
    }
 
-   // close Statement and Connection                  
+   /**
+    * Close all resources which includes disconnecting from the database and 
+    * setting the state of the object to disconnected.
+    * 
+    */             
    public void disconnectFromDatabase()
    {
       if (connectedToDatabase) {
          // close Statement and Connection            
          try {
-            resultSet.close();
+            if(resultSet != null) {
+               resultSet.close();
+            }
             statement.close();
             connection.close();
          }

@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -31,12 +32,24 @@
             <Label text="Title" GridPane.rowIndex="1" />
             <Label text="Rating" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             <Label text="Description" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <TextArea fx:id="queryTextArea" maxWidth="1.7976931348623157E308" prefRowCount="3" promptText="Enter query here the press Submit Query" wrapText="true" GridPane.columnSpan="3">
+               <tooltip>
+                  <Tooltip text="Enter a read only query" />
+               </tooltip></TextArea>
+          <Button mnemonicParsing="false" onAction="#submitQueryButtonPressed" text="Submit Query" GridPane.columnIndex="3">
+               <tooltip>
+                  <Tooltip text="Submit a SELECT query to  show all or filter the table content" wrapText="true" />
+               </tooltip></Button>
             <TextField fx:id="titleTextField" prefHeight="25.0" prefWidth="206.0" GridPane.rowIndex="2" />
-            <TextField fx:id="ratingTextField" prefHeight="25.0" prefWidth="54.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <TextField fx:id="ratingTextField" prefHeight="25.0" prefWidth="54.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+               <tooltip>
+                  <Tooltip text="The rating must be a number from 1-10" />
+               </tooltip></TextField>
             <TextField fx:id="descrTextField" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-          <Button mnemonicParsing="false" onAction="#addMovie" text="Add Movie" GridPane.columnIndex="3" GridPane.rowIndex="2" />
-            <TextArea fx:id="queryTextArea" maxWidth="1.7976931348623157E308" prefRowCount="3" promptText="Enter query here the press Submit Query" wrapText="true" GridPane.columnSpan="3" />
-          <Button mnemonicParsing="false" onAction="#submitQueryButtonPressed" text="Submit Query" GridPane.columnIndex="3" />
+          <Button mnemonicParsing="false" onAction="#addMovie" text="Add Movie" GridPane.columnIndex="3" GridPane.rowIndex="2">
+               <tooltip>
+                  <Tooltip text="Add a movie and show the entire table" />
+               </tooltip></Button>
          </children>
       </GridPane>
    </bottom>

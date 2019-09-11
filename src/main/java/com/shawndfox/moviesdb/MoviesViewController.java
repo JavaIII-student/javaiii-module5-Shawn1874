@@ -20,9 +20,17 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import static javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+/**
+ * This is the view controller for a dialog application that shows a Movies table
+ * and allows the addition of movies to a database and a filtering capability using
+ * SELECT SQL queries.
+ * 
+ * @author Shawn D. Fox
+ */
 public class MoviesViewController implements Initializable
 {
    private static final String DATABASE_URL = "jdbc:derby:Movies;create=true";
@@ -53,35 +61,29 @@ public class MoviesViewController implements Initializable
     @FXML
     private TextArea queryTextArea;
 
-   // query the database and display results in JTable
+    /**
+     * Submits the query to the JTable model, and resets the query text to the 
+     * default if the query is successful.
+     * 
+     * @param event 
+     */
    @FXML
    void submitQueryButtonPressed(ActionEvent event)
    {
       //perform a new query
       try {
          tableModel.setQuery(queryTextArea.getText());
+         queryTextArea.setText(DEFAULT_QUERY);
       } 
       catch (SQLException sqlException) {
          displayAlert(Alert.AlertType.ERROR, "Database Error", 
             sqlException.getMessage());
-         
-         // try to recover from invalid user query 
-         // by executing default query
-         try {
-            tableModel.setQuery(DEFAULT_QUERY);
-            queryTextArea.setText(DEFAULT_QUERY);
-         } 
-         catch (SQLException sqlException2) {
-            displayAlert(Alert.AlertType.ERROR, "Database Error", 
-               sqlException2.getMessage());
-            tableModel.disconnectFromDatabase(); // close connection  
-            System.exit(1); // terminate application
-         } 
       } 
    }
 
    /**
-    * The event handler for the Add Movie Button.
+    * The event handler for the Add Movie Button.  Validates the user inputs
+    * and executes an insertion if all inputs are acceptable.
     *
     * @param event
     */
@@ -91,6 +93,13 @@ public class MoviesViewController implements Initializable
       String ratingText = ratingTextField.getText();
       String titleText = titleTextField.getText();
       String descriptionText = descrTextField.getText();
+      
+      if(ratingText.isEmpty() || titleText.isEmpty() || descriptionText.isEmpty()) {
+         displayAlert(Alert.AlertType.ERROR, 
+                      "Invalid Entry!",
+                      "All fields must be filled out and the rating must be a value from 1 - 10");
+         return;
+      }
 
       try {
          int rating = Integer.parseInt(ratingText);
@@ -109,15 +118,16 @@ public class MoviesViewController implements Initializable
          descrTextField.clear();
          
          tableModel.setQuery(DEFAULT_QUERY);
-         queryTextArea.setText(DEFAULT_QUERY);
       }
       catch(NumberFormatException e) {
          displayAlert(Alert.AlertType.ERROR, 
                       "Invalid Entry", 
                       "Enter a rating from 1 to 10");
       }
-      catch (SQLException e) {
-
+      catch (SQLException sqlException) {
+         displayAlert(Alert.AlertType.ERROR, 
+                      "Database Error",
+                      sqlException.getMessage());
       }
    }
 
@@ -132,16 +142,16 @@ public class MoviesViewController implements Initializable
    public void initialize(URL url, ResourceBundle rb)
    {
       try {
-         System.out.println("Connecting to database URL: " + DATABASE_URL);
          connection = DriverManager.getConnection(DATABASE_URL);
 
          if (!moviesTableExists(connection)) {
             Statement stmt = connection.createStatement();
             System.out.println("Creating Table Movies");
             String primaryKey = "id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)";
-            String cmd = String.format("CREATE TABLE %s (%s, name VARCHAR(255), rating INT, description VARCHAR(255), CONSTRAINT primary_key PRIMARY KEY (id))",
-                                       nameOfMoviesTable,
-                                       primaryKey);
+            String cmd = String.format(
+                    "CREATE TABLE %s (%s, name VARCHAR(255), rating INT, description VARCHAR(255), CONSTRAINT primary_key PRIMARY KEY (id))",
+                    nameOfMoviesTable,
+                    primaryKey);
             stmt.execute(cmd);
          }
 
@@ -150,15 +160,19 @@ public class MoviesViewController implements Initializable
          insertMovie = connection.prepareStatement(preparedStatement);
       }
       catch (SQLException sqlException) {
-         System.out.println("test");
-         sqlException.printStackTrace();
+         displayAlert(Alert.AlertType.ERROR, 
+                      "Database Error",
+                      sqlException.getMessage());
+         
+         // No point continuing if the database can't be initialized.
+         System.exit(1);
       }
       
       // create ResultSetTableModel and display database table
       try {
          // create TableModel for results of DEFAULT_QUERY
-         tableModel = new ResultSetTableModel(DATABASE_URL,
-                                              DEFAULT_QUERY);
+         tableModel = new ResultSetTableModel(DATABASE_URL);
+         tableModel.setQuery(DEFAULT_QUERY);
 
          // create JTable based on the tableModel    
          JTable resultTable = new JTable(tableModel);
